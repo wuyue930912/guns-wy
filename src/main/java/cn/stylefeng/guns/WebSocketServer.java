@@ -10,7 +10,6 @@ import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
-import cn.stylefeng.guns.modular.system.model.User;
 import cn.stylefeng.guns.modular.system.service.IUserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
