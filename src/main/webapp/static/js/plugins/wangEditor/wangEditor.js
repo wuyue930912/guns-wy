@@ -502,7 +502,7 @@
     var config = {
 
         // 默认菜单配置
-        menus: ['head', 'bold', 'italic', 'underline', 'strikeThrough', 'foreColor', 'backColor', 'link', 'list', 'justify', 'quote', 'emoticon', 'image', 'table', 'video', 'code', 'undo', 'redo'],
+        menus: ['head', 'bold', 'italic', 'underline', 'strikeThrough', 'foreColor', 'backColor', 'link', 'list', 'justify', 'quote', 'emoticon', 'image', 'undo', 'redo'],
 
         // 编辑区域的 z-index
         zIndex: 10000,

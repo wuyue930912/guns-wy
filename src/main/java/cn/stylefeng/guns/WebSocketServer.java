@@ -1,42 +1,66 @@
 package cn.stylefeng.guns;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import javax.servlet.http.HttpSession;
 import javax.websocket.*;
+import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
+
+import cn.stylefeng.guns.modular.system.model.User;
+import cn.stylefeng.guns.modular.system.service.IUserService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
  * @ServerEndpoint 注解是一个类层次的注解，它的功能主要是将目前的类定义成一个websocket服务器端,
  * 注解的值将被用于监听用户连接的终端访问URL地址,客户端可以通过这个URL来连接到WebSocket服务器端
  */
-@ServerEndpoint("/websocket")
+@ServerEndpoint("/websocket/{ro_user}")
 @Component
 public class WebSocketServer {
+
+    @Autowired
+    private IUserService userService;
+
     //静态变量，用来记录当前在线连接数。应该把它设计成线程安全的。
     private static int onlineCount = 0;
 
     //concurrent包的线程安全Set，用来存放每个客户端对应的MyWebSocket对象。若要实现服务端与单一客户端通信的话，可以使用Map来存放，其中Key可以为用户标识
-    private static CopyOnWriteArraySet<WebSocketServer> webSocketSet = new CopyOnWriteArraySet<WebSocketServer>();
+    private static final Map<Integer, CopyOnWriteArraySet<WebSocketServer>> rooms = new HashMap<>();
 
     //与某个客户端的连接会话，需要通过它来给客户端发送数据
     private Session session;
 
-    private HttpSession httpSession;
+    private Integer roomId;
+
+    private String userName;
+
     /**
      * 连接建立成功调用的方法
      * @param session  可选的参数。session为与某个客户端的连接会话，需要通过它来给客户端发送数据
      */
     @OnOpen
-    public void onOpen(Session session,EndpointConfig config){
-        this.httpSession = (HttpSession) config.getUserProperties().get(HttpSession.class.getName());
+    public void onOpen(Session session, @PathParam(value = "ro_user") String ro_user){
         this.session = session;
-        webSocketSet.add(this);     //加入set中
-        addOnlineCount();           //在线数加1
+        String[] param = ro_user.split("-");
+        this.roomId = Integer.parseInt(param[0]);
+        this.userName = param[1];
+
+        CopyOnWriteArraySet<WebSocketServer> friends = rooms.get(roomId);
+        if (friends == null) {
+            synchronized (rooms) {
+                if (!rooms.containsKey(roomId)) {
+                    friends = new CopyOnWriteArraySet<>();
+                    rooms.put(roomId, friends);
+                }
+            }
+        }
+        friends.add(this);
     }
 
     /**
@@ -44,9 +68,10 @@ public class WebSocketServer {
      */
     @OnClose
     public void onClose(){
-        webSocketSet.remove(this);  //从set中删除
-        subOnlineCount();           //在线数减1
-        System.out.println("有一连接关闭！当前在线人数为" + getOnlineCount());
+        CopyOnWriteArraySet<WebSocketServer> friends = rooms.get(roomId);
+        if (friends != null) {
+            friends.remove(this);
+        }
     }
 
     /**
@@ -56,14 +81,13 @@ public class WebSocketServer {
      */
     @OnMessage
     public void onMessage(String message, Session session) {
-
+        SimpleDateFormat format = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
         //群发消息
-        for(WebSocketServer item: webSocketSet){
-            try {
-                item.sendMessage(message);
-            } catch (IOException e) {
-                e.printStackTrace();
-                continue;
+        CopyOnWriteArraySet<WebSocketServer> friends = rooms.get(roomId);
+
+        if (friends != null) {
+            for (WebSocketServer item : friends) {
+                item.session.getAsyncRemote().sendText(this.userName + ":::"  + format.format(new Date()) + ":" + message);
             }
         }
     }
@@ -77,17 +101,6 @@ public class WebSocketServer {
     public void onError(Session session, Throwable error){
         System.out.println("发生错误");
         error.printStackTrace();
-    }
-
-    /**
-     * 这个方法与上面几个方法不一样。没有用注解，是根据自己需要添加的方法。
-     * @param message
-     * @throws IOException
-     */
-    public void sendMessage(String message) throws IOException{
-        SimpleDateFormat format = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
-        this.session.getBasicRemote().sendText(format.format(new Date()) + " : "+message);
-        //this.session.getAsyncRemote().sendText(message);
     }
 
     public static synchronized int getOnlineCount() {

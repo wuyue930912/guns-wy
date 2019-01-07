@@ -1,45 +1,179 @@
 @layout("/common/_container.html"){
+
+<style type="text/css">
+	.button {
+		display: inline-block;
+		border-radius: 4px;
+		background-color: #337ab7;
+		border: none;
+		color: #FFFFFF;
+		text-align: center;
+		font-size: 12px;
+		font-weight: bold;
+		padding: 5px;
+		width: 150px;
+		transition: all 0.5s;
+		cursor: pointer;
+		margin: 1px;
+	}
+
+	.button span {
+		cursor: pointer;
+		display: inline-block;
+		position: relative;
+		transition: 0.5s;
+	}
+
+	.button span:after {
+		content: '»';
+		position: absolute;
+		opacity: 0;
+		top: 0;
+		right: -20px;
+		transition: 0.5s;
+	}
+
+	.button:hover span {
+		padding-right: 25px;
+	}
+
+	.button:hover span:after {
+		opacity: 1;
+		right: 0;
+	}
+
+	.button:active {
+		background-color: #66ccff;
+		box-shadow: 0 5px #666;
+		transform: translateY(4px);
+	}
+
+	.chat-bubble-bottom {}
+	.chat-bubble-bottom:before {
+		content: '';
+		position: absolute;
+		width: 0;
+		height: 0;
+		right:10px;
+		top:-21px;
+		border: 10px solid;
+		border-color:transparent transparent #337ab7 transparent ;
+	}
+	.chat-bubble-bottom:after {
+		content: '';
+		position: absolute;
+		width: 0;
+		height: 0;
+		right:12px;
+		top:-16px;
+		border: 8px solid;
+		border-color:transparent transparent #337ab7 transparent  ;
+	}
+	.chat-bubble{
+		position: relative;
+		margin:10px;
+		padding:5px 8px;
+		word-break: break-all;
+		background:#fff;
+		border: 1px solid #337ab7;
+		border-radius: 5px;
+		max-width:200px;
+	}
+	.chat-bubble-left {}
+	.chat-bubble-left:before {
+		content: '';
+		position: absolute;
+		width: 0;
+		height: 0;
+		left: -20px;
+		top:5px;
+		border: 10px solid;
+		border-color:transparent #337ab7 transparent  transparent ;
+	}
+	.chat-bubble-left:after {
+		content: '';
+		position: absolute;
+		width: 0;
+		height: 0;
+		left:-16px;
+		top:7px;
+		border: 8px solid;
+		border-color:transparent #337ab7 transparent  transparent ;
+	}
+
+	.chat-bubble-right {}
+	.chat-bubble-right:before {
+		content: '';
+		position: absolute;
+		width: 0;
+		height: 0;
+		right: -20px;
+		top:5px;
+		border: 10px solid;
+		border-color:transparent transparent transparent #337ab7;
+	}
+	.chat-bubble-right:after {
+		content: '';
+		position: absolute;
+		width: 0;
+		height: 0;
+		right:-16px;
+		top:7px;
+		border: 8px solid;
+		border-color:transparent transparent transparent #337ab7 ;
+	}
+
+</style>
+
 <div class="row">
 	<div class="col-sm-12">
 		<div class="ibox float-e-margins">
-			<div class="ibox-title">
-				<h5>websocket</h5>
-			</div>
-			<div id="msg" style="border: solid red 2px; width: 600px; width: 500px" >
-				<div id="message">
-
+			<div class="panel panel-primary" >
+				<div class="panel-heading" >
+					<h5>websocket</h5>
+					<input id="userName" type="hidden" value="${shiro.getUser().name}">
 				</div>
-			</div>
-
-
-			<div class="ibox-content">
-				<div class="row row-lg">
-					<div class="form-group">
-						<label class="col-sm-1 control-label">输入框</label>
-						<div class="col-sm-11">
-							<div id="editor" class="editorHeight">
-							</div>
-						</div>
+				<div class="panel-body" id="msg">
+					<div id="message" style="height: 200px; width: 100%;  overflow-y: auto;">
 					</div>
 				</div>
 			</div>
+
+			<div class="panel panel-primary" >
+				<div class="panel-heading" >
+					<button href="javascript:void(0)" style="vertical-align:middle" class="button" onclick="send()">发送消息</button>
+					<button href="javascript:void(0)" style="vertical-align:middle" class="button" onclick="closeWebSocket()">关闭WebSocket连接</button>
+				</div>
+				<div class="panel-body" >
+					<div id="editor" class="editorHeight">
+					</div>
+				</div>
+			</div>
+
 		</div>
 	</div>
 </div>
 <script type="text/javascript">
+
+
+	var editorWebSocket;
+
     $(function () {
-		//初始化编辑器
         var E = window.wangEditor;
-        var editor = new E('#editor');
-        editor.create();
-        editor.txt.html($("#contentVal").val());
-        NoticeInfoDlg.editor = editor;
+        editorWebSocket = new E('#editor');
+        editorWebSocket.create();
+        editorWebSocket.txt.html($("#contentVal").val());
+        NoticeInfoDlg.editor = editorWebSocket;
     });
 
     var websocket = null;
+    var userName = $('#userName').val();
+    var liveName = 100001;
+    var param = liveName + '-' + userName;
+
     //判断当前浏览器是否支持WebSocket
     if ('WebSocket' in window) {
-        websocket = new WebSocket("ws://localhost:9001/websocket");
+        websocket = new WebSocket("ws://localhost:9001/websocket/"+param);
     }
     else {
         alert('当前浏览器 Not support websocket')
@@ -52,8 +186,9 @@
 
     //连接成功建立的回调方法
     websocket.onopen = function () {
-        setMessageInnerHTML("WebSocket连接成功");
-    }
+        document.getElementById('message').innerHTML += '<div> ${shiro.getUser().name}：连接websocket成功 </div><br/>';
+        $("#message").scrollTop($("#message")[0].scrollHeight);
+    };
 
     //接收到消息的回调方法
     websocket.onmessage = function (event) {
@@ -72,7 +207,15 @@
 
     //将消息显示在网页上
     function setMessageInnerHTML(innerHTML) {
-            document.getElementById('message').innerHTML += '<div style=\'margin-left: 3%; text-align:left; background:#337ab7; \'>' + innerHTML + '<br/></div>';
+        var user = innerHTML.split(":::")[0];
+        var msg = innerHTML.split(":::")[1];
+        if(userName === user){
+            document.getElementById('message').innerHTML += '<div> <div class=\'chat-bubble chat-bubble-right\' style=\'text-align:left; background:#337ab7; width: 200px; color: white; margin-left: 75%;\'> ' + msg + '</div></div>';
+            $("#message").scrollTop($("#message")[0].scrollHeight);
+		}else{
+            document.getElementById('message').innerHTML += '<div> <div style="width: 50px">' + user + '</div> <div class=\'chat-bubble chat-bubble-left\' style=\'text-align:left; background:#337ab7; width: 200px; color: white; margin-top: -20px; margin-left: 55px;\'> ' + msg + '</div> </div>';
+            $("#message").scrollTop($("#message")[0].scrollHeight);
+		}
     }
 
     //关闭WebSocket连接
@@ -82,9 +225,10 @@
 
     //发送消息
     function send() {
+        var message = editorWebSocket.txt.html();
         websocket.send(message);
     }
 </script>
-<script type="text/javascript" src="//unpkg.com/wangeditor/release/wangEditor.min.js"></script>
+<script type="text/javascript" src="${ctxPath}/static/js/plugins/wangEditor/wangEditor.min.js"></script>
 <script src="${ctxPath}/static/modular/system/notice/notice.js"></script>
 @}
