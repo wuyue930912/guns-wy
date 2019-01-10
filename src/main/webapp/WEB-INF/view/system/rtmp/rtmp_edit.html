@@ -1,0 +1,37 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins">
+    <div class="ibox-content">
+        <div class="form-horizontal">
+
+            <div class="row">
+                <div class="col-sm-6 b-r">
+                            <#input id="id" name="" value="${item.id}" underline="true"/>
+                            <#input id="userid" name="" value="${item.userid}" underline="true"/>
+                            <#input id="livertmp" name="" value="${item.livertmp}" underline="true"/>
+                            <#input id="livename" name="" value="${item.livename}" underline="true"/>
+                            <#input id="livetitle" name="" value="${item.livetitle}" underline="true"/>
+                            <#input id="livepage" name="" value="${item.livepage}" />
+                </div>
+
+                <div class="col-sm-6">
+                            <#input id="liveimage" name="" value="${item.liveimage}" underline="true"/>
+                            <#input id="livestate" name="" value="${item.livestate}" underline="true"/>
+                            <#input id="red5url" name="" value="${item.red5url}" underline="true"/>
+                            <#input id="createtime" name="" value="${item.createtime}" underline="true"/>
+                            <#input id="bz" name="" value="${item.bz}" underline="true"/>
+                            <#input id="top" name="" value="${item.top}" />
+                </div>
+            </div>
+
+            <div class="row btn-group-m-t">
+                <div class="col-sm-10">
+                    <#button btnCss="info" name="提交" id="ensure" icon="fa-check" clickFun="RtmpInfoDlg.editSubmit()"/>
+                    <#button btnCss="danger" name="取消" id="cancel" icon="fa-eraser" clickFun="RtmpInfoDlg.close()"/>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script src="${ctxPath}/static/modular/system/rtmp/rtmp_info.js"></script>
+@}
