@@ -4,7 +4,9 @@
 
 
 $(document).ready(function () {
-
+    $("body").removeClass("skin-2");
+    $("body").removeClass("skin-3");
+    $("body").addClass("skin-1");
     // MetsiMenu
     $('#side-menu').metisMenu();
     // 打开右侧边栏
